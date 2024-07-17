@@ -18,6 +18,8 @@ model User {
   email     String   @unique
   name      String
   password  String
+  role      String
+  status    Boolean  @default(true)
   lastLogin DateTime @default(now())
   Order     Order[]
 }
@@ -28,7 +30,8 @@ model Product {
   description   String
   price         Float
   stock         Int
-  aviablity     Boolean
+  availability  Boolean         @default(true)
+  status        Boolean         @default(true)
   OrderProducts OrderProducts[]
 }
 

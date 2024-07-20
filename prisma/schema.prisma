@@ -14,13 +14,13 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
   name      String
   password  String
   role      String
-  status    Boolean  @default(true)
-  lastLogin DateTime @default(now())
+  status    UserStatus @default(ACTIVE)
+  lastLogin DateTime   @default(now())
   Order     Order[]
 }
 
@@ -29,7 +29,7 @@ model Product {
   name          String
   description   String
   price         Float
-  stock         Int
+  stock         Int             @default(0)
   availability  Boolean         @default(true)
   status        Boolean         @default(true)
   OrderProducts OrderProducts[]
@@ -40,6 +40,7 @@ model Order {
   createdAt     DateTime        @default(now())
   client        User            @relation(fields: [clientId], references: [id])
   clientId      Int
+  status        OrderStatus     @default(PENDING)
   OrderProducts OrderProducts[]
 }
 
@@ -48,6 +49,21 @@ model OrderProducts {
   productId Int
   order     Order   @relation(fields: [orderId], references: [id])
   orderId   Int
+  quantity  Int
 
   @@id([productId, orderId])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  DELIVERING
+  COMPLETED
+  CANCELED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
 }

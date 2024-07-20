@@ -1,3 +1,4 @@
+import { NewProductInput, UpdateProductInput } from './product.utils';
 import { db } from "../utils/db.server"
 
 export type Product = {
@@ -10,42 +11,16 @@ export type Product = {
     status: boolean,
 }
 
-export type UpdateProductInput = {
-    name?: string,
-    description?: string,
-    price?: number,
-    stock?: number,
-    availability?: boolean,
-    status?: boolean,
-}
-
-
 /**
  * Creates a new product.
  *
- * @param {string} name - The name of the product.
- * @param {string} description - The description of the product.
- * @param {number} price - The price of the product.
- * @param {number} [stock=0] - The initial stock of the product. Defaults to 0.
- * @param {boolean} availability - Indicates whether the product is available.
+ * @param {NewProductInput} input - The data for the new product.
  * @returns {Promise<Product | Error>} A Promise resolving to the created product or an Error.
  */
-export const createProduct = async (
-    name: string,
-    description: string,
-    price: number,
-    stock: number = 0,
-    availability: boolean
-): Promise<Product | Error> => {
+export const createProduct = async (input: NewProductInput): Promise<Product | Error> => {
     try {
         const newProduct = await db.product.create({
-            data: {
-                name,
-                description,
-                price,
-                stock,
-                availability
-            }
+            data: input
         })
         return newProduct
     } catch (error) {
@@ -114,7 +89,10 @@ export const updateProduct = async (id: number, data: UpdateProductInput): Promi
  */
 export const deleteProduct = async (id: number) => {
     try {
-        await db.product.delete({ where: { id: id } })
+        await db.product.update({
+            data: { status: false },
+            where: { id: id }
+        })
     } catch (error) {
         throw new Error()
     }

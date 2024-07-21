@@ -46,7 +46,7 @@ export const getOrderById = async (id: number): Promise<Order | Error> => {
         })
         return orderData
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -60,20 +60,10 @@ export const getOrderByClientId = async (clientId: number): Promise<Order[] | Er
     try {
         const orderData = await db.order.findMany({
             where: {
-                client: {
-                    id: clientId
-                }
+                clientId: clientId
             },
             include: {
-                client: {
-                    select: {
-                        name: true,
-                        id: true,
-                        email: true,
-                        role: true,
-                        status: true
-                    }
-                },
+                client: true,
                 OrderProducts: {
                     include: {
                         product: true
@@ -83,7 +73,7 @@ export const getOrderByClientId = async (clientId: number): Promise<Order[] | Er
         })
         return orderData
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -96,11 +86,22 @@ export const getOrderByClientId = async (clientId: number): Promise<Order[] | Er
 export const createOrder = async (input: NewOrderInput): Promise<Order | Error> => {
     try {
         const { client, products } = input
+
+        //validate product stock before order creation
+        const stockAvailability = await Promise.all(
+            products.map(async (product) => {
+                const prodStock = await db.product.findUniqueOrThrow({ where: { id: product.productId } })
+                return prodStock.stock - product.quantity >= 0
+            })
+        )
+        if (stockAvailability.includes(false)) throw new Error('Insufficient stock of the desired product')
+
+        //Create order
         const newOrder = await db.order.create({
             data: {
                 clientId: client,
                 OrderProducts: {
-                    create: [...products]
+                    create: products
                 }
             },
             include: {
@@ -112,9 +113,27 @@ export const createOrder = async (input: NewOrderInput): Promise<Order | Error> 
                 client: true
             }
         })
+
+        // Update products stock
+        const updatedOrderProducts = await Promise.all(
+            newOrder.OrderProducts.map(async (OrderProduct) => {
+                const newStock = OrderProduct.product.stock - OrderProduct.quantity
+                const newProductBalance = await db.product.update({
+                    where: { id: OrderProduct.productId },
+                    data: {
+                        stock: newStock,
+                        availability: (newStock > 0)
+                    }
+                })
+                OrderProduct.product = newProductBalance
+                return OrderProduct
+            })
+        )
+        newOrder.OrderProducts = updatedOrderProducts
+
         return newOrder
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -143,6 +162,6 @@ export const updateOrderStatus = async (id: number, status: OrderStatus): Promis
         })
         return updatedOrder
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }

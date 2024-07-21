@@ -52,8 +52,8 @@ userRouter.put('/:id',
             const input = req.body
             const updatedUser = await UserService.updateUser(id, input);
             return res.status(200).json(updatedUser);
-        } catch (error) {
-            return res.status(500).json(error);
+        } catch (error: any) {
+            return res.status(500).json(error.message);
         }
     },
 )

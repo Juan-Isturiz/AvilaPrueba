@@ -28,7 +28,6 @@ orderRouter.get('/history/:id/:page?', authenticateToken, async (req: Request, r
             return res.status(200).json(order);
         }
     } catch (err: any) {
-        console.error(err);
         return res.status(500).json(err.message);
     }
 })

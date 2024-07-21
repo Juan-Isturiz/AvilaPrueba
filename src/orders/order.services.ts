@@ -66,7 +66,7 @@ export const getOrderByClientId = async (clientId: number, page: number): Promis
             throw new Error('Invalid page number')
         }
         const offset = (page - 1) * 10
-        console.log(offset)
+
         const orderData = await db.order.findMany({
             where: {
                 clientId: clientId
@@ -106,7 +106,9 @@ export const createOrder = async (input: NewOrderInput): Promise<Order | Error> 
         //validate product stock before order creation
         const stockAvailability = await Promise.all(
             products.map(async (product) => {
+
                 const prodStock = await db.product.findUniqueOrThrow({ where: { id: product.productId } })
+                if (product.quantity <= 0) { throw new Error(`Invalid quantity rom product ${prodStock.name}`) }
                 return prodStock.stock - product.quantity >= 0
             })
         )

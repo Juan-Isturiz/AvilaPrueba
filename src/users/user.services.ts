@@ -60,10 +60,14 @@ export const logIn = async (email: string, password: string): Promise<{ user: Us
  */
 export const signUp = async (input: NewUserInput): Promise<User | Error> => {
     try {
-        input.password = await passwordHashing(input.password); // Hash the password before saving
+        if (input.password.length < 8) throw new Error('Password must be at least 8 characters')
+
+        input.password = await passwordHashing(input.password);
+
         const newUser = await db.user.create({
             data: input
         });
+
         return newUser;
     } catch (error) {
         throw error;
@@ -80,7 +84,13 @@ export const signUp = async (input: NewUserInput): Promise<User | Error> => {
 export const updateUser = async (id: number, data: EditUserInput) => {
     try {
         if (data.password) {
+            if (data.password.length < 8) throw new Error(`Password must be at least 8 characters`);
             data.password = await passwordHashing(data.password);
+        }
+        if (data.email) {
+            const emailRegex = new RegExp(/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/);
+
+            if (!emailRegex.test(data.email)) throw new Error("Invalid email format: " + data.email);
         }
         const updatedUser = await db.user.update({
             where: { id: id },

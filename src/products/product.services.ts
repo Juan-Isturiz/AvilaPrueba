@@ -19,6 +19,10 @@ export type Product = {
  */
 export const createProduct = async (input: NewProductInput): Promise<Product | Error> => {
     try {
+        if (input.stock) {
+            if (input.stock < 0) throw new Error('Invalid stock value: ' + input.stock)
+        }
+        if (input.price <= 0) throw new Error('Invalid price value: ' + input.price)
         const newProduct = await db.product.create({
             data: input
         })

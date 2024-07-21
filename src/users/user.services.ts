@@ -1,7 +1,8 @@
+import { UserStatus } from './../utils/util.types';
 import { compareSync } from "bcrypt"; // Import password comparison function
 import { db } from "../utils/db.server"; // Import database connection
 import { EditUserInput, generateAcessToken, NewUserInput, passwordHashing } from "./user.utils"; // Import user-related utilities
-import { UserStatus } from "../utils/util.types";
+
 
 
 export type User = {
@@ -26,6 +27,7 @@ export const logIn = async (email: string, password: string): Promise<{ user: Us
                 email: true,
                 name: true,
                 role: true,
+                status: true,
                 password: true
             },
             where: { email: email }
@@ -33,6 +35,9 @@ export const logIn = async (email: string, password: string): Promise<{ user: Us
 
         if (!user) {
             throw new Error('User not found');
+        }
+        if ([UserStatus.SUSPENDED, UserStatus.DELETED].includes(user.status)) {
+            throw new Error('User is account not authorized');
         }
 
         if (compareSync(password, user.password)) {
@@ -74,6 +79,9 @@ export const signUp = async (input: NewUserInput): Promise<User | Error> => {
  */
 export const updateUser = async (id: number, data: EditUserInput) => {
     try {
+        if (data.password) {
+            data.password = await passwordHashing(data.password);
+        }
         const updatedUser = await db.user.update({
             where: { id: id },
             data: data

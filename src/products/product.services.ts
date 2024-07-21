@@ -82,6 +82,12 @@ export const getProductById = async (id: number): Promise<Product | Error> => {
  */
 export const updateProduct = async (id: number, data: UpdateProductInput): Promise<Product | Error> => {
     try {
+        if (data.price) {
+            if (data.price <= 0) throw new Error('Invalid price setting');
+        }
+        if (data.stock) {
+            if (data.stock < 0) throw new Error('Invalid price setting');
+        }
         const updatedProduct = await db.product.update({
             where: { id: id },
             data: data

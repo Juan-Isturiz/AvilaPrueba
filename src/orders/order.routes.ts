@@ -19,14 +19,16 @@ orderRouter.get('/:id', authenticateToken, async (req: Request, res: Response) =
     }
 })
 
-orderRouter.get('/history/:id', authenticateToken, async (req: Request, res: Response) => {
+orderRouter.get('/history/:id/:page?', authenticateToken, async (req: Request, res: Response) => {
     try {
         const id: number = parseInt(req.params.id, 10);
-        const order = await OrderService.getOrderByClientId(id);
+        const page: number = parseInt(req.params.page, 10)
+        const order = await OrderService.getOrderByClientId(id, page);
         if (order) {
             return res.status(200).json(order);
         }
     } catch (err: any) {
+        console.error(err);
         return res.status(500).json(err.message);
     }
 })

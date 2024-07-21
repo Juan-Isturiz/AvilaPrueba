@@ -5,9 +5,11 @@ import { body, validationResult } from 'express-validator';
 
 export const productRouter = express.Router()
 
-productRouter.get('/', async (req: Request, res: Response) => {
+productRouter.get('/available/:page?', async (req: Request, res: Response) => {
     try {
-        const availableProducts = await ProductService.listAvailableProducts()
+        const page: number = parseInt(req.params.page, 10)
+        const availableProducts = await ProductService.listAvailableProducts(page)
+
         return res.status(200).json(availableProducts)
     } catch (error: any) {
         return res.status(500).json(error.message);

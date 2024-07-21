@@ -24,24 +24,34 @@ export const createProduct = async (input: NewProductInput): Promise<Product | E
         })
         return newProduct
     } catch (error) {
-        throw new Error()
+        throw error
     }
 
 }
 
 /**
  * Lists all available products.
- *
+ * @param {number} page - The page number that will be returned
  * @returns {Promise<Product[] | Error>} A Promise resolving to an array of available products or an Error.
  */
-export const listAvailableProducts = async (): Promise<Product[] | Error> => {
+export const listAvailableProducts = async (page: number = 1): Promise<Product[] | Error> => {
     try {
+        if (isNaN(page)) {
+            page = 1;
+        }
+        if (page <= 0) {
+            throw new Error('Invalid page number')
+        }
+        const offset = (page - 1) * 10
         const productList = await db.product.findMany({
-            where: { availability: true }
+            where: { availability: true },
+            skip: offset,
+            take: 10
+
         })
         return productList
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -59,7 +69,7 @@ export const getProductById = async (id: number): Promise<Product | Error> => {
         return product
 
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -78,7 +88,7 @@ export const updateProduct = async (id: number, data: UpdateProductInput): Promi
         })
         return updatedProduct
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }
 
@@ -94,6 +104,6 @@ export const deleteProduct = async (id: number) => {
             where: { id: id }
         })
     } catch (error) {
-        throw new Error()
+        throw error
     }
 }

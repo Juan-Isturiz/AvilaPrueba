@@ -37,6 +37,7 @@ export const logIn = async (email: string, password: string): Promise<{ user: Us
 
         if (compareSync(password, user.password)) {
             const token = generateAcessToken(user);
+            await db.user.update({ where: { id: user.id }, data: { lastLogin: new Date() } })
             return { user, token };
         } else {
             throw new Error('Password mismatch');
@@ -83,6 +84,13 @@ export const updateUser = async (id: number, data: EditUserInput) => {
     }
 };
 
+/**
+ * Changes the status of a user.
+ *
+ * @param {number} id - The ID of the user to update.
+ * @param {UserStatus} status - The new status for the user.
+ * @returns {Promise<User | Error>} A Promise resolving to the updated user or an error.
+ */
 export const changeUserStatus = async (id: number, status: UserStatus): Promise<User | Error> => {
     try {
         const updatedStatus = await db.user.update({

@@ -54,10 +54,19 @@ export const getOrderById = async (id: number): Promise<Order | Error> => {
  * Fetches orders associated with a specific client.
  * 
  * @param {number} clientId - The ID of the client.
+ * * @param {number} page - The page number that will be returned
  * @returns {Promise<Order[] | Error>} A Promise resolving to an array of orders or an Error.
  */
-export const getOrderByClientId = async (clientId: number): Promise<Order[] | Error> => {
+export const getOrderByClientId = async (clientId: number, page: number): Promise<Order[] | Error> => {
     try {
+        if (isNaN(page)) {
+            page = 1;
+        }
+        if (page <= 0) {
+            throw new Error('Invalid page number')
+        }
+        const offset = (page - 1) * 10
+        console.log(offset)
         const orderData = await db.order.findMany({
             where: {
                 clientId: clientId
@@ -69,7 +78,14 @@ export const getOrderByClientId = async (clientId: number): Promise<Order[] | Er
                         product: true
                     }
                 }
-            }
+            },
+            skip: offset,
+            take: 10,
+            orderBy: [
+                {
+                    createdAt: 'desc'
+                }
+            ]
         })
         return orderData
     } catch (error) {

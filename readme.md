@@ -3,8 +3,11 @@ Esta api tiene como fin evaluar mi rendimiento en la construcción de una API RE
 
 ### Tecnologías usadas
 Se usó la librería `express` para la construcción principal de las rutas porque presenta una forma rápida, sencilla y escalable de construir API REST.
+
 Por otra parte, la API se hizo en `typescript` para tener un mejor manejo de tipos de datos y hacer más fácil el proceso de programación al estar al tanto de los errores sin necesidad de compilar.
+
 Se usó `dotenv` para guardar las variables de entorno sin subirlas necesariamente a github (_en este caso se subirá igualmente con fine de evaluación_).
+
 Para el almacenamiento de datos se hizo uso de `postgresql` por ser la herramienta con la que tenfo más experiencia als er una manejador de base de datos relacionales. Además de esto se uso como ORM `prisma` dadas las especificaciones de evaluación.
 
 ### Servicio de Usuario
@@ -23,7 +26,7 @@ Para la autenticación de usuario se hizo uso de la librería `jsonwebtoken` par
 ### Servicio de Productos
 | Endpoint | Descripción | Input |
 |---------|---------|-------|
-|`{api}/products` (GET)	|Obtiene una lista de todos los productos disponibles.|	Ninguno|
+|`{api}/products/available/:page?` (GET)	|Obtiene una lista de todos los productos disponibles e implementa paginación con base en el URL.|	Ninguno|
 |`{api}/products/:id` (GET)	|Obtiene los detalles de un producto específico por su ID.	|Ningún parámetro en el cuerpo de la petición.|
 |`{api}/products` (POST)	|Crea un nuevo producto. Recibe los datos del producto en el cuerpo de la petición.	|`json { name: string, description: string, price: number, stock: number, availability: boolean `}|
 |`{api}/products/:id` (PUT)	|Actualiza los datos de un producto existente. Recibe el ID del producto en la URL y los nuevos datos en el cuerpo de la petición.|	`json { name: string, description: string, price: number, stock: number, availability: boolean }`|
@@ -33,9 +36,68 @@ Para la autenticación de usuario se hizo uso de la librería `jsonwebtoken` par
 | Endpoint | Descripción | Input |
 | -------- | ----------- | ----- |
 |`{api}/orders/:id` (GET)	|Obtiene los detalles de un pedido específico por su ID.|	Ningún parámetro en el cuerpo de la petición.|
-|`{api}/orders/history/:id` (GET)|	Obtiene el historial de pedidos de un cliente específico por su ID.|	Ningún parámetro en el cuerpo de la petición.|
+|`{api}/orders/history/:id/:page?` (GET)|	Obtiene el historial de pedidos de un cliente específico por su ID e implementa paginación con base en el URL.|	Ningún parámetro en el cuerpo de la petición.|
 |`{api}/orders` (POST)	|Crea un nuevo pedido. Recibe el ID del cliente y un arreglo de productos en el cuerpo de la petición. | `json { client: number, products: [{prudctId: number, quantity: number}] }`|
 |`{api}/orders/process/:id` (PUT)|	Cambia el estado de un pedido a "PROCESSING". Recibe el ID del pedido en la URL.	|Ningún parámetro en el cuerpo de la petición.|
 `{api}/orders/deliver/:id` (PUT)|	Cambia el estado de un pedido a "DELIVERING". Recibe el ID del pedido en la URL.	|Ningún parámetro en el cuerpo de la petición.|
 `{api}/orders/complete/:id` (PUT)	|Cambia el estado de un pedido a "COMPLETED". Recibe el ID del pedido en la URL.	|Ningún parámetro en el cuerpo de la petición.|
 `{api}/orders/cancel/:id` (PUT)	|Cambia el estado de un pedido a "CANCELED". Recibe el ID del pedido en la URL.|	Ningún parámetro en el cuerpo de la petición.|	
+
+### Esquema de Prisma
+Se Hizo el esquema de `prisma` pensando en la escalabilidad del sistema y tomando en cuenta la adición de nuevos tipos de usuario entre otras cosas.
+```
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique
+  name      String
+  password  String
+  role      String
+  status    UserStatus @default(ACTIVE)
+  lastLogin DateTime   @default(now())
+  Order     Order[]
+}
+
+model Product {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String
+  price         Float
+  stock         Int             @default(0)
+  availability  Boolean         @default(true)
+  status        Boolean         @default(true)
+  OrderProducts OrderProducts[]
+}
+
+model Order {
+  id            Int             @id @default(autoincrement())
+  createdAt     DateTime        @default(now())
+  client        User            @relation(fields: [clientId], references: [id])
+  clientId      Int
+  status        OrderStatus     @default(PENDING)
+  OrderProducts OrderProducts[]
+}
+
+model OrderProducts {
+  product   Product @relation(fields: [productId], references: [id])
+  productId Int
+  order     Order   @relation(fields: [orderId], references: [id])
+  orderId   Int
+  quantity  Int
+
+  @@id([productId, orderId])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  DELIVERING
+  COMPLETED
+  CANCELED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+ ```
